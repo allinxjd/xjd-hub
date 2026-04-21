@@ -97,6 +97,7 @@ class WeChatPayClient:
                 "Authorization": auth,
                 "Content-Type": "application/json",
                 "Accept": "application/json",
+                "User-Agent": "XjdHub/1.0",
             },
         )
         data = resp.json()
