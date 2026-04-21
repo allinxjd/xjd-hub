@@ -6,7 +6,7 @@ import logging
 import time
 from typing import Optional
 
-from gateway.core.auth import JWTManager
+from hub.auth_utils import JWTManager
 
 logger = logging.getLogger(__name__)
 

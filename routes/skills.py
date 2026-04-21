@@ -171,7 +171,7 @@ def setup_skill_routes(app: web.Application, db: HubDB) -> None:
             return web.json_response({"error": f"Slug '{slug}' already taken"}, status=409)
 
         content_hash = hashlib.sha256(content.encode()).hexdigest()
-        from agent.skills.sandbox_policy import assess_tools_risk
+        from hub.auth_utils import assess_tools_risk
         tools = data.get("tools", [])
         tools_risk = assess_tools_risk(tools)
 

@@ -11,8 +11,7 @@ async def run_e2e():
     from hub.payment.credits import CreditManager
     from hub.payment.license import LicenseManager
     from hub.signing import SkillSigner, content_hash
-    from agent.skills.sandbox_policy import assess_tools_risk, DANGEROUS_TOOLS, SAFE_TOOLS
-    from gateway.core.auth import JWTManager, PasswordHasher
+    from hub.auth_utils import assess_tools_risk, DANGEROUS_TOOLS, JWTManager, PasswordHasher
     from aiohttp.test_utils import TestServer, TestClient
 
     passed = 0

@@ -36,8 +36,7 @@ class SkillSigner:
 
     def __init__(self, home_dir: Optional[Path] = None) -> None:
         if home_dir is None:
-            from agent.core.config import get_home
-            home_dir = get_home()
+            home_dir = Path.home() / ".xjd-agent"
         self._home = home_dir
         self._keypair_path = self._home / _KEYPAIR_FILE
         self._signing_key: Optional[bytes] = None

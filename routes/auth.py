@@ -10,7 +10,7 @@ from typing import Any
 
 from aiohttp import web
 
-from gateway.core.auth import JWTManager, PasswordHasher
+from hub.auth_utils import JWTManager, PasswordHasher
 from hub.db import HubDB
 
 logger = logging.getLogger(__name__)

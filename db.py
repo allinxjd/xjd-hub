@@ -106,8 +106,7 @@ class HubDB:
 
     def __init__(self, db_path: Optional[str] = None) -> None:
         if db_path is None:
-            from agent.core.config import get_home
-            db_path = str(get_home() / "hub.db")
+            db_path = str(Path.home() / ".xjd-agent" / "hub.db")
         self._db_path = db_path
         self._db: Optional[aiosqlite.Connection] = None
 

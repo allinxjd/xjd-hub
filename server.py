@@ -7,7 +7,7 @@ from typing import Optional
 
 from aiohttp import web
 
-from gateway.core.auth import JWTManager
+from hub.auth_utils import JWTManager
 from hub.db import HubDB
 from hub.routes.auth import setup_auth_routes
 from hub.routes.reviews import setup_review_routes
