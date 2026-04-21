@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XjdHub Admin</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f0f1a;--bg2:#1a1a2e;--bg3:#16213e;--border:#2a2a4a;--accent:#4361ee;--accent-h:#3a56d4;--text:#e0e0e0;--text2:#a0a0b8;--text3:#6a6a80;--green:#2ecc71;--red:#e74c3c;--yellow:#f39c12}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+/* Login */
+.login-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:32px;width:360px}
+.login-box h2{margin-bottom:20px;font-size:20px;text-align:center}
+.login-box input{width:100%;padding:10px 14px;margin-bottom:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:14px}
+.login-box button{width:100%;padding:10px;border:none;border-radius:6px;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;font-weight:600}
+.login-box button:hover{background:var(--accent-h)}
+.login-err{color:var(--red);font-size:13px;margin-bottom:8px;min-height:18px}
+/* Layout */
+.topbar{display:flex;align-items:center;padding:0 20px;height:48px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.topbar-title{font-weight:700;font-size:16px;margin-right:32px}
+.topbar-tabs{display:flex;gap:4px}
+.topbar-tab{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s}
+.topbar-tab:hover{background:var(--bg3);color:var(--text)}
+.topbar-tab.active{background:var(--accent);color:#fff}
+.topbar-right{margin-left:auto;font-size:13px;color:var(--text3)}
+.topbar-right span{cursor:pointer;color:var(--red);margin-left:12px}
+.main{padding:20px;max-width:1200px;margin:0 auto}
+/* Cards */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px}
+.stat-card .label{font-size:12px;color:var(--text3);margin-bottom:4px}
+.stat-card .value{font-size:24px;font-weight:700}
+.stat-card .value.green{color:var(--green)}
+.stat-card .value.yellow{color:var(--yellow)}
+.stat-card .value.accent{color:var(--accent)}
+/* Table */
+.toolbar{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+.toolbar input,.toolbar select{padding:7px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:13px}
+.toolbar input{flex:1;min-width:180px;max-width:300px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;background:var(--bg3);color:var(--text2);font-weight:600;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+tr:hover td{background:rgba(67,97,238,.06)}
+.badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge.paid,.badge.approved,.badge.active{background:rgba(46,204,113,.15);color:var(--green)}
+.badge.pending,.badge.pending_review{background:rgba(243,156,18,.15);color:var(--yellow)}
+.badge.failed,.badge.rejected,.badge.inactive{background:rgba(231,76,60,.15);color:var(--red)}
+.pager{display:flex;gap:8px;margin-top:12px;align-items:center;font-size:13px;color:var(--text2)}
+.pager button{padding:5px 14px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);cursor:pointer;font-size:13px}
+.pager button:disabled{opacity:.4;cursor:not-allowed}
+.pager button:hover:not(:disabled){border-color:var(--accent)}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:560px;max-width:92vw;max-height:80vh;overflow-y:auto;padding:24px}
+.modal h3{margin-bottom:16px;font-size:16px}
+.modal .close{float:right;cursor:pointer;font-size:20px;color:var(--text3);padding:0 4px}
+.modal .close:hover{color:var(--text)}
+.modal label{display:block;font-size:12px;color:var(--text3);margin:10px 0 4px}
+.modal input,.modal select{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:13px}
+.modal .btn{padding:8px 20px;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-size:13px;margin-top:14px}
+.modal .btn:hover{background:var(--accent-h)}
+.modal .txn-list{max-height:200px;overflow-y:auto;margin-top:12px}
+.modal .txn-list table{font-size:12px}
+.clickable{cursor:pointer;color:var(--accent)}
+.clickable:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<!-- Login -->
+<div id="loginOverlay" class="login-overlay" style="display:none">
+  <div class="login-box">
+    <h2>XjdHub Admin</h2>
+    <div id="loginErr" class="login-err"></div>
+    <input id="loginUser" placeholder="Username" autocomplete="username">
+    <input id="loginPass" placeholder="Password" type="password" autocomplete="current-password">
+    <button onclick="doLogin()">Login</button>
+  </div>
+</div>
+<!-- App -->
+<div id="app" style="display:none">
+  <div class="topbar">
+    <span class="topbar-title">XjdHub Admin</span>
+    <div class="topbar-tabs">
+      <div class="topbar-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</div>
+      <div class="topbar-tab" data-tab="users" onclick="switchTab('users')">Users</div>
+      <div class="topbar-tab" data-tab="orders" onclick="switchTab('orders')">Orders</div>
+      <div class="topbar-tab" data-tab="transactions" onclick="switchTab('transactions')">Transactions</div>
+      <div class="topbar-tab" data-tab="skills" onclick="switchTab('skills')">Skills</div>
+    </div>
+    <div class="topbar-right">
+      <span id="adminName"></span>
+      <span onclick="doLogout()">Logout</span>
+    </div>
+  </div>
+  <div class="main" id="mainContent"></div>
+</div>
+<div id="modalContainer"></div>
+<script>
+const API = '/hub/api';
+let _token = localStorage.getItem('hub_admin_token') || '';
+let _tab = 'dashboard';
+let _pages = {};
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function ts(epoch) { return epoch ? new Date(epoch * 1000).toLocaleString('zh-CN') : '-'; }
+function badge(val) { return `<span class="badge ${val}">${esc(val)}</span>`; }
+
+async function api(path, opts = {}) {
+  const h = { 'Content-Type': 'application/json' };
+  if (_token) h['Authorization'] = 'Bearer ' + _token;
+  const res = await fetch(API + path, { ...opts, headers: { ...h, ...(opts.headers || {}) } });
+  if (res.status === 401 || res.status === 403) { doLogout(); throw new Error('Unauthorized'); }
+  return res.json();
+}
+
+function init() {
+  if (_token) { showApp(); loadTab(); }
+  else { document.getElementById('loginOverlay').style.display = 'flex'; document.getElementById('app').style.display = 'none'; }
+}
+
+async function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  if (!u || !p) return;
+  try {
+    const data = await fetch(API + '/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, password: p })
+    }).then(r => r.json());
+    if (!data.token) { document.getElementById('loginErr').textContent = data.error || 'Login failed'; return; }
+    _token = data.token;
+    localStorage.setItem('hub_admin_token', _token);
+    showApp();
+    loadTab();
+  } catch (e) { document.getElementById('loginErr').textContent = e.message; }
+}
+
+function doLogout() {
+  _token = '';
+  localStorage.removeItem('hub_admin_token');
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+function switchTab(tab) {
+  _tab = tab;
+  document.querySelectorAll('.topbar-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
+  _pages[tab] = 1;
+  loadTab();
+}
+
+async function loadTab() {
+  const m = document.getElementById('mainContent');
+  try {
+    if (_tab === 'dashboard') await renderDashboard(m);
+    else if (_tab === 'users') await renderUsers(m);
+    else if (_tab === 'orders') await renderOrders(m);
+    else if (_tab === 'transactions') await renderTransactions(m);
+    else if (_tab === 'skills') await renderSkills(m);
+  } catch (e) { m.innerHTML = `<div style="color:var(--red);padding:40px">${esc(e.message)}</div>`; }
+}
+
+async function renderDashboard(m) {
+  const d = await api('/admin/dashboard');
+  m.innerHTML = `
+    <div class="stats">
+      <div class="stat-card"><div class="label">Total Users</div><div class="value accent">${d.total_users}</div></div>
+      <div class="stat-card"><div class="label">Total Recharge</div><div class="value green">&yen;${d.total_recharge_yuan.toFixed(2)}</div></div>
+      <div class="stat-card"><div class="label">Credits Issued</div><div class="value yellow">${d.total_credits_issued.toFixed(0)}</div></div>
+      <div class="stat-card"><div class="label">Credits Consumed</div><div class="value">${d.total_consumed_credits.toFixed(0)}</div></div>
+      <div class="stat-card"><div class="label">Total Skills</div><div class="value">${d.total_skills}</div></div>
+    </div>
+    <h3 style="margin-bottom:10px;font-size:14px;color:var(--text2)">Recent Orders</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>Order</th><th>User</th><th>Amount</th><th>Credits</th><th>Status</th><th>Time</th></tr>
+      ${d.recent_orders.map(o => `<tr>
+        <td>${esc(o.order_no)}</td><td>${esc(o.username||'')}</td>
+        <td>&yen;${o.amount_yuan}</td><td>${o.credits}</td>
+        <td>${badge(o.status)}</td><td>${ts(o.created_at)}</td>
+      </tr>`).join('')}
+    </table></div>`;
+}
+
+function pagerHtml(tab, page, total, size) {
+  const pages = Math.ceil(total / size) || 1;
+  return `<div class="pager">
+    <button ${page<=1?'disabled':''} onclick="_pages['${tab}']=${page-1};loadTab()">Prev</button>
+    <span>Page ${page} / ${pages} (${total} total)</span>
+    <button ${page>=pages?'disabled':''} onclick="_pages['${tab}']=${page+1};loadTab()">Next</button>
+  </div>`;
+}
+
+let _userSearch = '';
+async function renderUsers(m) {
+  const page = _pages.users || 1;
+  const params = new URLSearchParams({ page, page_size: 20 });
+  if (_userSearch) params.set('q', _userSearch);
+  const d = await api('/admin/users?' + params);
+  m.innerHTML = `
+    <div class="toolbar">
+      <input id="userQ" placeholder="Search username..." value="${esc(_userSearch)}" onkeydown="if(event.key==='Enter'){_userSearch=this.value;_pages.users=1;loadTab()}">
+    </div>
+    <div class="tbl-wrap"><table>
+      <tr><th>Username</th><th>Email</th><th>Role</th><th>Balance</th><th>Status</th><th>Registered</th><th>Last Login</th></tr>
+      ${d.users.map(u => `<tr>
+        <td class="clickable" onclick="showUserDetail('${esc(u.user_id)}')">${esc(u.username)}</td>
+        <td>${esc(u.email)}</td><td>${badge(u.role)}</td>
+        <td>${u.balance.toFixed(1)}</td>
+        <td>${u.active ? badge('active') : badge('inactive')}</td>
+        <td>${ts(u.created_at)}</td><td>${ts(u.last_login)}</td>
+      </tr>`).join('')}
+    </table></div>
+    ${pagerHtml('users', page, d.total, 20)}`;
+}
+
+async function showUserDetail(uid) {
+  const d = await api('/admin/users/' + uid);
+  const u = d.user;
+  const mc = document.getElementById('modalContainer');
+  mc.innerHTML = `<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <h3>${esc(u.username)}</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;margin-bottom:12px">
+      <div><span style="color:var(--text3)">Email:</span> ${esc(u.email)}</div>
+      <div><span style="color:var(--text3)">Role:</span> ${badge(u.role)}</div>
+      <div><span style="color:var(--text3)">Balance:</span> <strong>${u.balance.toFixed(1)}</strong></div>
+      <div><span style="color:var(--text3)">Status:</span> ${u.active ? 'Active' : 'Inactive'}</div>
+      <div><span style="color:var(--text3)">Registered:</span> ${ts(u.created_at)}</div>
+      <div><span style="color:var(--text3)">Last Login:</span> ${ts(u.last_login)}</div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:12px">
+      <label>Role</label>
+      <select id="mdRole"><option ${u.role==='user'?'selected':''}>user</option><option ${u.role==='admin'?'selected':''}>admin</option><option ${u.role==='reviewer'?'selected':''}>reviewer</option></select>
+      <label>Balance Adjustment</label>
+      <input id="mdAdj" type="number" placeholder="e.g. 100 or -50" value="0">
+      <label>Reason</label>
+      <input id="mdReason" placeholder="Reason for adjustment">
+      <button class="btn" onclick="saveUser('${esc(u.user_id)}')">Save</button>
+    </div>
+    <div class="txn-list">
+      <h4 style="font-size:13px;margin:12px 0 6px;color:var(--text2)">Recent Transactions</h4>
+      <table><tr><th>Type</th><th>Amount</th><th>After</th><th>Desc</th><th>Time</th></tr>
+      ${d.transactions.map(t => `<tr>
+        <td>${badge(t.type)}</td><td style="color:${t.amount>=0?'var(--green)':'var(--red)'}">${t.amount>=0?'+':''}${t.amount.toFixed(1)}</td>
+        <td>${t.balance_after.toFixed(1)}</td><td>${esc(t.description||'')}</td><td>${ts(t.created_at)}</td>
+      </tr>`).join('')}
+      </table>
+    </div>
+  </div></div>`;
+}
+
+async function saveUser(uid) {
+  const role = document.getElementById('mdRole').value;
+  const adj = parseFloat(document.getElementById('mdAdj').value) || 0;
+  const reason = document.getElementById('mdReason').value;
+  await api('/admin/users/' + uid, { method: 'PUT', body: JSON.stringify({ role, balance_adjustment: adj, reason }) });
+  closeModal();
+  loadTab();
+}
+
+function closeModal() { document.getElementById('modalContainer').innerHTML = ''; }
+
+let _orderStatus = '';
+async function renderOrders(m) {
+  const page = _pages.orders || 1;
+  const params = new URLSearchParams({ page, page_size: 20 });
+  if (_orderStatus) params.set('status', _orderStatus);
+  const d = await api('/admin/orders?' + params);
+  m.innerHTML = `
+    <div class="toolbar">
+      <select onchange="_orderStatus=this.value;_pages.orders=1;loadTab()">
+        <option value="">All Status</option>
+        <option value="pending" ${_orderStatus==='pending'?'selected':''}>Pending</option>
+        <option value="paid" ${_orderStatus==='paid'?'selected':''}>Paid</option>
+        <option value="failed" ${_orderStatus==='failed'?'selected':''}>Failed</option>
+      </select>
+    </div>
+    <div class="tbl-wrap"><table>
+      <tr><th>Order No</th><th>User</th><th>Amount</th><th>Credits</th><th>Type</th><th>Status</th><th>Created</th><th>Paid At</th></tr>
+      ${d.orders.map(o => `<tr>
+        <td style="font-family:monospace;font-size:12px">${esc(o.order_no)}</td>
+        <td>${esc(o.username||'')}</td><td>&yen;${o.amount_yuan}</td><td>${o.credits}</td>
+        <td>${esc(o.pay_type)}</td><td>${badge(o.status)}</td>
+        <td>${ts(o.created_at)}</td><td>${ts(o.paid_at)}</td>
+      </tr>`).join('')}
+    </table></div>
+    ${pagerHtml('orders', page, d.total, 20)}`;
+}
+
+let _txType = '';
+async function renderTransactions(m) {
+  const page = _pages.transactions || 1;
+  const params = new URLSearchParams({ page, page_size: 20 });
+  if (_txType) params.set('type', _txType);
+  const d = await api('/admin/transactions?' + params);
+  m.innerHTML = `
+    <div class="toolbar">
+      <select onchange="_txType=this.value;_pages.transactions=1;loadTab()">
+        <option value="">All Types</option>
+        <option value="recharge" ${_txType==='recharge'?'selected':''}>Recharge</option>
+        <option value="purchase" ${_txType==='purchase'?'selected':''}>Purchase</option>
+        <option value="admin_adjust" ${_txType==='admin_adjust'?'selected':''}>Admin Adjust</option>
+        <option value="refund" ${_txType==='refund'?'selected':''}>Refund</option>
+      </select>
+    </div>
+    <div class="tbl-wrap"><table>
+      <tr><th>User</th><th>Type</th><th>Amount</th><th>Balance After</th><th>Order</th><th>Description</th><th>Time</th></tr>
+      ${d.transactions.map(t => `<tr>
+        <td>${esc(t.username||'')}</td><td>${badge(t.type)}</td>
+        <td style="color:${t.amount>=0?'var(--green)':'var(--red)'}">${t.amount>=0?'+':''}${t.amount.toFixed(1)}</td>
+        <td>${t.balance_after.toFixed(1)}</td>
+        <td style="font-family:monospace;font-size:12px">${esc(t.order_no||'')}</td>
+        <td>${esc(t.description||'')}</td><td>${ts(t.created_at)}</td>
+      </tr>`).join('')}
+    </table></div>
+    ${pagerHtml('transactions', page, d.total, 20)}`;
+}
+
+let _skillStatus = '';
+async function renderSkills(m) {
+  const page = _pages.skills || 1;
+  const params = new URLSearchParams({ page, page_size: 20 });
+  if (_skillStatus) params.set('status', _skillStatus);
+  const d = await api('/admin/skills?' + params);
+  m.innerHTML = `
+    <div class="toolbar">
+      <select onchange="_skillStatus=this.value;_pages.skills=1;loadTab()">
+        <option value="">All Status</option>
+        <option value="pending_review" ${_skillStatus==='pending_review'?'selected':''}>Pending Review</option>
+        <option value="approved" ${_skillStatus==='approved'?'selected':''}>Approved</option>
+        <option value="rejected" ${_skillStatus==='rejected'?'selected':''}>Rejected</option>
+      </select>
+    </div>
+    <div class="tbl-wrap"><table>
+      <tr><th>Name</th><th>Author</th><th>Version</th><th>Category</th><th>Price</th><th>Downloads</th><th>Rating</th><th>Status</th><th>Created</th></tr>
+      ${d.skills.map(s => `<tr>
+        <td><strong>${esc(s.name)}</strong></td><td>${esc(s.author_name||'')}</td>
+        <td>${esc(s.version)}</td><td>${esc(s.category)}</td>
+        <td>${s.price>0?'&yen;'+s.price:'Free'}</td><td>${s.downloads}</td>
+        <td>${s.rating_avg.toFixed(1)} (${s.rating_count})</td>
+        <td>${badge(s.status)}</td><td>${ts(s.created_at)}</td>
+      </tr>`).join('')}
+    </table></div>
+    ${pagerHtml('skills', page, d.total, 20)}`;
+}
+
+init();
+</script>
+</body>
+</html>

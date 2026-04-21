@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import logging
+import os
+from pathlib import Path
 from typing import Optional
 
 from aiohttp import web
 
 from hub.auth_utils import JWTManager
 from hub.db import HubDB
+from hub.routes.admin import setup_admin_routes
 from hub.routes.auth import setup_auth_routes
 from hub.routes.reviews import setup_review_routes
 from hub.routes.recharge import setup_recharge_routes
@@ -66,6 +69,13 @@ def create_hub_app(
     setup_skill_routes(app, db)
     setup_review_routes(app, db)
     setup_recharge_routes(app, db)
+    setup_admin_routes(app, db)
+
+    _static_dir = Path(__file__).parent / "static"
+    if _static_dir.is_dir():
+        app.router.add_get("/hub/admin/", lambda r: web.FileResponse(_static_dir / "admin.html"))
+        app.router.add_get("/hub/admin", lambda r: web.HTTPFound("/hub/admin/"))
+        app.router.add_static("/hub/static/", _static_dir)
 
     async def on_startup(_app: web.Application) -> None:
         await db.connect()
