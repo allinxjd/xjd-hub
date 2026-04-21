@@ -24,7 +24,7 @@ class CreditManager:
         )
         return float(row["balance"]) if row else 0.0
 
-    async def add_credits(self, user_id: str, amount: float, reason: str = "") -> float:
+    async def add_credits(self, user_id: str, amount: float, reason: str = "", order_no: str = "") -> float:
         if amount <= 0:
             raise ValueError("Amount must be positive")
         await self._db.execute(
@@ -33,11 +33,18 @@ class CreditManager:
         )
         await self._db.commit()
         new_balance = await self.get_balance(user_id)
+        tx_type = "recharge" if "recharge" in reason else "refund" if "refund" in reason else "credit"
+        await self._db.execute(
+            "INSERT INTO hub_transactions (user_id, type, amount, balance_after, order_no, description, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (user_id, tx_type, amount, new_balance, order_no, reason, time.time()),
+        )
+        await self._db.commit()
         logger.info("Credits added: user=%s amount=%.2f reason=%s balance=%.2f",
                      user_id, amount, reason, new_balance)
         return new_balance
 
-    async def deduct_credits(self, user_id: str, amount: float, reason: str = "") -> float:
+    async def deduct_credits(self, user_id: str, amount: float, reason: str = "", order_no: str = "") -> float:
         if amount <= 0:
             raise ValueError("Amount must be positive")
         balance = await self.get_balance(user_id)
@@ -49,6 +56,12 @@ class CreditManager:
         )
         await self._db.commit()
         new_balance = await self.get_balance(user_id)
+        await self._db.execute(
+            "INSERT INTO hub_transactions (user_id, type, amount, balance_after, order_no, description, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (user_id, "purchase", -amount, new_balance, order_no, reason, time.time()),
+        )
+        await self._db.commit()
         logger.info("Credits deducted: user=%s amount=%.2f reason=%s balance=%.2f",
                      user_id, amount, reason, new_balance)
         return new_balance

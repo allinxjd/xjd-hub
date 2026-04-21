@@ -98,6 +98,36 @@ CREATE INDEX IF NOT EXISTS idx_skills_author ON hub_skills(author_id);
 CREATE INDEX IF NOT EXISTS idx_versions_skill ON hub_skill_versions(skill_id);
 CREATE INDEX IF NOT EXISTS idx_purchases_user ON hub_purchases(user_id);
 CREATE INDEX IF NOT EXISTS idx_purchases_skill ON hub_purchases(skill_id);
+
+CREATE TABLE IF NOT EXISTS hub_recharge_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_no TEXT UNIQUE NOT NULL,
+    user_id TEXT REFERENCES hub_users(user_id),
+    amount_yuan REAL NOT NULL,
+    amount_fen INTEGER NOT NULL,
+    credits REAL NOT NULL,
+    status TEXT DEFAULT 'pending',
+    pay_type TEXT NOT NULL,
+    wx_prepay_id TEXT DEFAULT '',
+    wx_transaction_id TEXT DEFAULT '',
+    created_at REAL,
+    paid_at REAL
+);
+
+CREATE TABLE IF NOT EXISTS hub_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT REFERENCES hub_users(user_id),
+    type TEXT NOT NULL,
+    amount REAL NOT NULL,
+    balance_after REAL NOT NULL,
+    order_no TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    created_at REAL
+);
+
+CREATE INDEX IF NOT EXISTS idx_recharge_user ON hub_recharge_orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_recharge_status ON hub_recharge_orders(status);
+CREATE INDEX IF NOT EXISTS idx_transactions_user ON hub_transactions(user_id);
 """
 
 

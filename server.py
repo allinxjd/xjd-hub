@@ -11,6 +11,7 @@ from hub.auth_utils import JWTManager
 from hub.db import HubDB
 from hub.routes.auth import setup_auth_routes
 from hub.routes.reviews import setup_review_routes
+from hub.routes.recharge import setup_recharge_routes
 from hub.routes.skills import setup_skill_routes
 
 logger = logging.getLogger(__name__)
@@ -64,12 +65,24 @@ def create_hub_app(
     setup_auth_routes(app, db, jwt_mgr)
     setup_skill_routes(app, db)
     setup_review_routes(app, db)
+    setup_recharge_routes(app, db)
 
     async def on_startup(_app: web.Application) -> None:
         await db.connect()
+        try:
+            from hub.payment.wechat import WeChatPayConfig, WeChatPayClient
+            config = WeChatPayConfig.from_env()
+            if config.mch_id:
+                _app["wechat_pay"] = WeChatPayClient(config)
+                logger.info("WeChat Pay initialized: mch_id=%s", config.mch_id)
+        except Exception as e:
+            logger.debug("WeChat Pay init skipped: %s", e)
         logger.info("XjdHub server started")
 
     async def on_cleanup(_app: web.Application) -> None:
+        wechat = _app.get("wechat_pay")
+        if wechat:
+            await wechat.close()
         await db.close()
 
     app.on_startup.append(on_startup)
